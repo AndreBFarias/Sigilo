@@ -85,7 +85,6 @@ def _montar_sidebar(cfg: dict) -> dict:
         # Logo da marca no cabeçalho da sidebar (st.logo renderiza como
         # stLogo, não stImage — escapa do fundo de papel do preview do selo).
         st.logo(str(LOGO_MARCA), size='large')
-        st.subheader('Chapa do selo')
         campos = cfg['campos']
         titulo = st.text_input('Título', value=campos['titulo'])
         nome = st.text_input('Nome', value=campos['nome'])
@@ -280,7 +279,8 @@ def main() -> None:
 
     cfg_editado = _montar_sidebar(st.session_state['config'])
 
-    st.title('Sigilo')
+    st.markdown('<h1>Sigi<span style="color: #BD93F9">lo</span></h1>',
+                unsafe_allow_html=True)
     st.caption('Sele documentos com o seu carimbo — o original nunca é alterado.')
 
     enviado = st.file_uploader('Documento',

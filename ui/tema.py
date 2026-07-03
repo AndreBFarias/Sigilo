@@ -28,6 +28,13 @@ input, textarea, button, select, [data-testid="stWidgetLabel"] {
     font-family: 'Archivo', 'Helvetica Neue', system-ui, sans-serif;
 }
 
+/* Rótulos de campo: presença legível sobre a chapa, subordinados aos eyebrows
+   (uppercase) mas acima dos inputs. Cor herdada (pergaminho), sem cor nova. */
+[data-testid="stWidgetLabel"] {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
 /* Wordmark: serif de alto contraste — o selo gravado da marca */
 [data-testid="stAppViewContainer"] h1 {
     font-family: 'Fraunces', 'Georgia', serif !important;
@@ -136,8 +143,11 @@ button[kind="primary"]:not(:disabled):hover, [data-testid="stBaseButton-primary"
     transform: translateY(-1px);
     box-shadow: 0 12px 28px -10px rgba(255, 85, 85, 0.72);
 }
+/* Disabled: um botão fantasma com contorno — perceptível e claramente inativo,
+   sem o fundo lacre nem o glow do habilitado (a distinção de estado é nítida). */
 button[kind="primary"]:disabled, [data-testid="stBaseButton-primary"]:disabled {
-    opacity: 0.4;
+    opacity: 0.55;
+    border: 1px solid rgba(248, 248, 242, 0.18) !important;
     cursor: not-allowed;
 }
 
