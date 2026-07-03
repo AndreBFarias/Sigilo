@@ -39,6 +39,7 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint UX-01/01b: upload de logo + "Remover logo" remove de verdade | PRONTA (03/07) — logo vazia = sem logo (main.py:46 sem `or placeholder`) |
 | Sprint UX-02: logo da marca na sidebar + favicon | PRONTA (03/07) — st.logo + page_icon, constantes ICONE/LOGO_MARCA |
 | Sprint UX-03: preview contínuo em rolagem vertical | PRONTA (03/07) — todas as páginas empilhadas, cache por página, clique por página preservado |
+| Sprint UX-05: fonte do selo embutida (Liberation Sans, OFL 1.1) | PRONTA (03/07) — render determinístico, texto vivo, subset + objstms, PDF < 60 KB |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 
@@ -54,7 +55,10 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Âncora | base do selo 17.3 pt acima da linha "Brasília/DF," |
 
 O selo oficial é um bitmap 440x120 px — o nosso é texto vetorial (fica MAIS
-nítido que o original em zoom).
+nítido que o original em zoom). A fonte é a Liberation Sans (métrica
+Arial ≈ Helvetica) embutida em subset via `insert_text(fontfile=)`
+(`assets/fonts/`, SIL OFL 1.1, compatível com GPL-3), fixando o render em
+qualquer visualizador sem depender de fonte do sistema.
 
 ---
 

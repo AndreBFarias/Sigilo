@@ -94,6 +94,36 @@ def test_carimbo_em_pdf(tmp_path):
     assert 'Verifique em https://validar.sigilo.app' in texto
 
 
+def test_fonte_embutida_e_texto_vivo(tmp_path):
+    """UX-05: a fonte TTF fica embutida (subset), não mais a base-14
+    helv/hebo, e o texto continua vivo/pesquisável (guarda contra a
+    regressão para bitmap achatado)."""
+    src = _pdf_branco(tmp_path / 'doc.pdf')
+    out = carimbar_pdf(src, tmp_path / 'out.pdf', CAMPOS)
+    doc = fitz.open(out)
+    pagina = doc[-1]
+    basefonts = [f[3] for f in pagina.get_fonts()]
+    texto = pagina.get_text()
+    doc.close()
+    # subset embutido: basefont vem com prefixo (ex.: 'MUPTJJ+Liberation Sans')
+    assert any('Liberation Sans' in n for n in basefonts)
+    assert not any(n in ('Helvetica', 'Helvetica-Bold') for n in basefonts)
+    assert 'Documento assinado eletronicamente' in texto
+
+
+def test_nome_acentuado_sem_tofu(tmp_path):
+    """UX-05: o TTF embutido cobre os glifos PT-BR — nome com acento
+    renderiza íntegro (sem '?'/tofu), extraível literal do PDF."""
+    campos = dict(CAMPOS, nome='JOÃO DA CONCEIÇÃO')
+    src = _pdf_branco(tmp_path / 'doc.pdf')
+    out = carimbar_pdf(src, tmp_path / 'out.pdf', campos)
+    doc = fitz.open(out)
+    texto = doc[-1].get_text()
+    doc.close()
+    assert 'JOÃO DA CONCEIÇÃO' in texto
+    assert '?' not in texto
+
+
 def test_original_intacto(tmp_path):
     src = _pdf_branco(tmp_path / 'doc.pdf')
     antes = hashlib.sha256(src.read_bytes()).hexdigest()

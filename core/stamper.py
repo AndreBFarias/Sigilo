@@ -10,20 +10,43 @@ from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
+# Raiz do repositório (core/ -> raiz) para localizar a fonte empacotada.
+RAIZ = Path(__file__).resolve().parent.parent
+# Fonte embutida no selo: Liberation Sans (métrica Arial ≈ Helvetica), sob
+# SIL Open Font License 1.1 (ver assets/fonts/OFL.txt). Empacotada no repo
+# porque o app é distribuível e não pode depender de fonte do sistema.
+# Embutir a TTF via insert_text(fontfile=) fixa o render em qualquer
+# visualizador; o texto continua vivo/pesquisável e vetorial (base-14 era
+# substituída de forma imprevisível pelo visualizador).
+FONTE_REGULAR = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Regular.ttf'
+FONTE_BOLD = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Bold.ttf'
+# Nome interno do recurso de fonte no PDF de saída (um por peso).
+FONTE_REGULAR_NOME = 'sigilo-sans'
+FONTE_BOLD_NOME = 'sigilo-sans-bold'
+
 # Layout clonado do selo gov.br por engenharia reversa (2026-07-02):
 # o selo oficial é um bitmap 440x120px escalado para 165x45pt; as medidas
 # abaixo foram extraídas pixel a pixel e os tamanhos de fonte calculados
-# pela largura das linhas (métrica Helvetica).
+# pela largura das linhas (métrica Helvetica ≈ Liberation Sans, por isso as
+# baselines e posições absolutas sobrevivem à troca da fonte).
 REF_LARGURA, REF_ALTURA = 165.0, 45.0
 LOGO_BOX = (0.0, 11.2, 40.9, 29.6)  # bbox do logo no referencial 165x45
 X_TEXTO = 45.0                       # início do bloco de texto
-# (campo, fonte, tamanho pt, baseline pt) no referencial 165x45
+# (campo, peso, tamanho pt, baseline pt) no referencial 165x45
 LAYOUT = (
-    ('titulo', 'helv', 5.70, 7.10),
-    ('nome', 'hebo', 4.81, 18.38),
-    ('data', 'helv', 5.42, 27.00),
-    ('verifique', 'helv', 5.85, 33.30),
+    ('titulo', 'regular', 5.70, 7.10),
+    ('nome', 'bold', 4.81, 18.38),
+    ('data', 'regular', 5.42, 27.00),
+    ('verifique', 'regular', 5.85, 33.30),
 )
+# peso -> (nome interno embutido, arquivo TTF empacotado)
+FONTES = {
+    'regular': (FONTE_REGULAR_NOME, FONTE_REGULAR),
+    'bold': (FONTE_BOLD_NOME, FONTE_BOLD),
+}
+# Cache de fitz.Font para medir a largura com a MESMA métrica do render:
+# fitz.get_text_length só conhece a base-14; fitz.Font.text_length usa o TTF.
+_FONTE_MEDIDA: 'dict[str, fitz.Font]' = {}
 
 ANCORA_TEXTO = 'Brasília/DF'
 ANCORA_GAP = 17.3  # pt entre a base do selo e a linha âncora (padrão gov)
@@ -71,8 +94,18 @@ def encontrar_ancora(doc: fitz.Document):
     return None
 
 
-def _ajustar_fonte(texto: str, fonte: str, fs: float, max_w: float) -> float:
-    largura = fitz.get_text_length(texto, fontname=fonte, fontsize=fs)
+def _fonte_medida(fontfile: Path) -> fitz.Font:
+    """fitz.Font (cacheado) usado só para medir a largura do texto na MESMA
+    métrica da fonte embutida no render — get_text_length não a conhece."""
+    chave = str(fontfile)
+    if chave not in _FONTE_MEDIDA:
+        _FONTE_MEDIDA[chave] = fitz.Font(fontfile=chave)
+    return _FONTE_MEDIDA[chave]
+
+
+def _ajustar_fonte(texto: str, fonte: fitz.Font, fs: float,
+                   max_w: float) -> float:
+    largura = fonte.text_length(texto, fontsize=fs)
     return fs if largura <= max_w else fs * max_w / largura
 
 
@@ -151,17 +184,25 @@ def carimbar_pdf(pdf_in: Path, pdf_out: Path, campos: dict,
         'data': f'Data: {timestamp_agora()}',
         'verifique': f'Verifique em {verifique}' if verifique else '',
     }
-    for campo, fonte, fs, baseline in LAYOUT:
+    for campo, peso, fs, baseline in LAYOUT:
         texto = valores[campo]
         if not texto:
             continue
-        fs = _ajustar_fonte(texto, fonte, fs * ef, max_w)
+        nome_interno, fontfile = FONTES[peso]
+        fs = _ajustar_fonte(texto, _fonte_medida(fontfile), fs * ef, max_w)
         page.insert_text(fitz.Point(x_texto, box.y0 + baseline * ey),
-                         texto, fontsize=fs, fontname=fonte)
+                         texto, fontsize=fs,
+                         fontname=nome_interno, fontfile=str(fontfile))
 
     pdf_out.parent.mkdir(parents=True, exist_ok=True)
-    # deflate: sem isso o logo entra como RGB cru e infla o PDF em ~1 MB.
-    doc.save(pdf_out, deflate=True, deflate_images=True, garbage=3)
+    # subset_fonts corta o glyf do TTF embutido ao subconjunto de glifos
+    # realmente usado; use_objstms comprime os dicionários CIDFont em object
+    # streams (PDF 1.5). Sem os dois, a fonte embutida inflaria o PDF muito
+    # além dos ~25 KB. deflate/deflate_images seguem cuidando do logo (RGB cru
+    # inflava ~1 MB); deflate_fonts comprime o stream da fonte.
+    doc.subset_fonts()
+    doc.save(pdf_out, deflate=True, deflate_images=True, deflate_fonts=True,
+             garbage=4, use_objstms=1)
     doc.close()
     logger.info('Carimbo aplicado: %s', pdf_out)
     return pdf_out

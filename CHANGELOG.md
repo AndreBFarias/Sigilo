@@ -16,6 +16,10 @@
   preservados) e selo clampado em fotos pequenas
 - Logo placeholder (wordmark) e ícone arcano do aplicativo, paleta Dracula
 - Linha "Verifique em" padrão apontando para https://validar.sigilo.app
+- Fonte do selo embutida no PDF via TTF (Liberation Sans Regular/Bold,
+  `assets/fonts/`, SIL OFL 1.1 — de fonts-liberation2 2.1.5, compatível com
+  GPL-3): render tipográfico determinístico em qualquer visualizador, texto
+  segue vivo/pesquisável (subset embutido; PDF permanece < 60 KB)
 - Suíte de testes completa (22 testes: carimbo, proporção, campos vazios,
   imagens, letterbox, compressão, política de sobrescrita, preview e clique)
 - Infraestrutura: install/uninstall, run.sh, launcher do navegador
