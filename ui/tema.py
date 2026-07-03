@@ -18,7 +18,6 @@ _CSS = """
     --placa: #44475A;
     --roxo: #BD93F9;
     --lacre: #FF5555;
-    --lacre-fundo: #E64747;
     --pergaminho: #F8F8F2;
     --nevoa: #6272A4;
 }
@@ -120,7 +119,7 @@ code, .sigilo-dado {
 button[kind="primary"]:not(:disabled), [data-testid="stBaseButton-primary"]:not(:disabled) {
     background-color: var(--lacre) !important;
     border: 1px solid var(--lacre) !important;
-    color: var(--pergaminho) !important;
+    color: var(--breu) !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
@@ -128,12 +127,12 @@ button[kind="primary"]:not(:disabled), [data-testid="stBaseButton-primary"]:not(
     border-radius: 11px;
     padding: 0.72rem 1rem;
     box-shadow: 0 8px 22px -10px rgba(255, 85, 85, 0.6);
-    transition: transform 130ms ease, box-shadow 130ms ease,
-                background-color 130ms ease;
+    transition: transform 130ms ease, box-shadow 130ms ease;
 }
+/* No hover o fundo permanece #FF5555 (nunca escurece): o texto breu sobre o
+   lacre rende 4,53:1 (AA), e escurecer para #E64747 derrubaria para
+   3,63:1 (sub-AA). A elevação e a sombra mais forte já comunicam o hover. */
 button[kind="primary"]:not(:disabled):hover, [data-testid="stBaseButton-primary"]:not(:disabled):hover {
-    background-color: var(--lacre-fundo) !important;
-    border-color: var(--lacre-fundo) !important;
     transform: translateY(-1px);
     box-shadow: 0 12px 28px -10px rgba(255, 85, 85, 0.72);
 }
