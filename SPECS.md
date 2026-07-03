@@ -40,6 +40,7 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint UX-02: logo da marca na sidebar + favicon | PRONTA (03/07) — st.logo + page_icon, constantes ICONE/LOGO_MARCA |
 | Sprint UX-03: preview contínuo em rolagem vertical | PRONTA (03/07) — todas as páginas empilhadas, cache por página, clique por página preservado |
 | Sprint UX-05: fonte do selo embutida (Liberation Sans, OFL 1.1) | PRONTA (03/07) — render determinístico, texto vivo, subset + objstms, PDF < 60 KB |
+| Sprint UX-04: modernização da UI (cartório moderno) | PRONTA (03/07) — Fraunces no wordmark, Archivo na UI, eyebrows com fio roxo, lacre único, captions AA |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 

@@ -316,15 +316,17 @@ def main() -> None:
 
     resultado = st.session_state.get('resultado')
     if resultado and Path(resultado).exists():
-        st.success(f'Assinado e salvo em {resultado}')
-        coluna_baixar, coluna_abrir = st.columns(2)
-        coluna_baixar.download_button('Baixar PDF assinado',
-                                      Path(resultado).read_bytes(),
-                                      file_name=Path(resultado).name,
-                                      mime='application/pdf',
-                                      width='stretch')
-        if coluna_abrir.button('Abrir pasta Assinados', width='stretch'):
-            subprocess.Popen(['xdg-open', str(SAIDA)])
+        # Recibo: agrupa sucesso + ações num cartão (layout, sem lógica nova).
+        with st.container(border=True):
+            st.success(f'Assinado e salvo em {resultado}')
+            coluna_baixar, coluna_abrir = st.columns(2)
+            coluna_baixar.download_button('Baixar PDF assinado',
+                                          Path(resultado).read_bytes(),
+                                          file_name=Path(resultado).name,
+                                          mime='application/pdf',
+                                          width='stretch')
+            if coluna_abrir.button('Abrir pasta Assinados', width='stretch'):
+                subprocess.Popen(['xdg-open', str(SAIDA)])
 
 
 main()
