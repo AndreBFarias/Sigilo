@@ -1,0 +1,51 @@
+*$py.class
+app.log
+build/
+dist/
+# Distribution / Packaging
+.DS_Store
+*.egg-info/
+.env/
+env/
+# IDE / Editor
+.idea/
+*.log
+__pycache__/
+*.py[cod]
+*.swo
+*.swp
+Thumbs.db
+.venv/
+venv/
+.vscode/
+.pytest_cache/
+
+# Relatórios reais (dados pessoais — nunca vão pro repo)
+Docx/
+Assinados/
+logo-govbr.png
+*.docx
+
+# --- anti-IA (anonimato local) ---
+GUIDE.md
+AGENTS.md
+GEMINI.md
+COPILOT.md
+HANDOFF-PROMPT.md
+HANDOFF.md
+HOW_TO_RESUME.md
+VALIDATOR_BRIEF.md
+STATE.md
+.cursorrules
+.windsurfrules
+.claude/
+.cursor/
+.aider*
+.continue/
+.github/copilot-instructions.md
+
+# Symlink local para diretrizes (não vai pro repo)
+CLAUDE.md
+
+# Artefatos de validação local (navegador automatizado)
+.playwright-mcp/

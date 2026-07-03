@@ -1,0 +1,6 @@
+# A UI migrou de GTK4 para Streamlit (2026-07-03): PyGObject saiu do projeto.
+PyMuPDF
+Pillow
+pytest
+streamlit==1.56.0                  # pin espelha a versão testada no protocolo-ouroboros
+streamlit-image-coordinates==0.4.0 # clique no preview do carimbo; pin exato (terceiro pequeno)

@@ -1,0 +1,17 @@
+# Tema Dracula canônico — identidade declarada no SPECS (Sprint 3).
+# font "sans serif" e não "monospace": lição FIX-08 do protocolo-ouroboros
+# (monospace global pisa na tipografia injetada pelo tema CSS).
+[theme]
+primaryColor = "#bd93f9"
+backgroundColor = "#282a36"
+secondaryBackgroundColor = "#44475a"
+textColor = "#f8f8f2"
+font = "sans serif"
+
+[server]
+headless = true
+port = 8511
+address = "127.0.0.1"
+
+[browser]
+gatherUsageStats = false

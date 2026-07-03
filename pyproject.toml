@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigilo"
+version = "0.1.0"
+description = "Selador local de documentos (PDF, DOCX, imagens): carimbo de assinatura com nome, timestamp e campos configuráveis"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+requires-python = ">=3.10"
+dependencies = [
+    "PyMuPDF>=1.23.0",
+    "Pillow>=10.0.0",
+    "streamlit==1.56.0",
+    "streamlit-image-coordinates==0.4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "ui*"]
