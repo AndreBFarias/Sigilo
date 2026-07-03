@@ -91,10 +91,17 @@ def _montar_sidebar(cfg: dict) -> dict:
         nome = st.text_input('Nome', value=campos['nome'])
         verifique = st.text_input('Verifique em', value=campos['verifique_em'],
                                   placeholder='vazio = linha oculta')
-        logo = cfg['logo']
+        # logo_atual carrega a escolha da sessão entre reruns ('' = removida);
+        # sem ele, o gate por file_id pularia a re-persistência mas o valor
+        # reverteria para cfg['logo'] a cada rerun (desfazendo a remoção).
+        logo = st.session_state.get('logo_atual', cfg['logo'])
         enviado_logo = st.file_uploader('Logo do selo',
                                         type=['png', 'jpg', 'jpeg'])
-        if enviado_logo is not None:
+        if (enviado_logo is not None
+                and enviado_logo.file_id
+                != st.session_state.get('logo_file_id')):
+            # Persiste só uma vez por upload novo: reruns com o mesmo arquivo
+            # no widget não recriam a logo (senão desfariam "Remover logo").
             try:
                 Image.open(io.BytesIO(enviado_logo.getvalue())).verify()
             except Exception:
@@ -104,11 +111,18 @@ def _montar_sidebar(cfg: dict) -> dict:
                 logo = config.salvar_logo(
                     enviado_logo.getvalue(),
                     Path(enviado_logo.name).suffix.lower())
+                st.session_state['logo_file_id'] = enviado_logo.file_id
+                st.session_state['logo_atual'] = logo
         if logo and Path(logo).exists():
             st.image(logo, width=120)
             if st.button('Remover logo'):
                 config.remover_logo()
                 logo = ''
+                st.session_state['logo_atual'] = ''
+                # Marca o upload corrente como tratado: o rerun seguinte cai no
+                # ramo "já persistido" e não recria o arquivo no disco.
+                if enviado_logo is not None:
+                    st.session_state['logo_file_id'] = enviado_logo.file_id
         else:
             st.caption('Sem logo — o selo sai sem imagem.')
         coluna_l, coluna_a = st.columns(2)

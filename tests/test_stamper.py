@@ -196,6 +196,24 @@ def test_pdf_com_logo_sem_bloat(tmp_path):
     assert out.stat().st_size < 60_000
 
 
+def test_cli_logo_vazia_sem_logo(tmp_path, monkeypatch):
+    """Logo removida (cfg['logo'] == '') → o PDF final sai sem imagem embutida.
+
+    Regressão do UX-01b: antes, main.py fazia `'' or placeholder`, reintroduzindo
+    o wordmark no selo mesmo após "Remover logo". get_images() vazio prova que
+    nenhuma imagem foi embutida (com logo, retornaria uma entrada)."""
+    monkeypatch.setattr(main, 'SAIDA', tmp_path / 'saida')
+    monkeypatch.setattr(main, 'carregar', lambda: {
+        'campos': CAMPOS, 'logo': '', 'largura': 165, 'altura': 45,
+        'posicao': 'ancora-assinatura'})
+    src = _pdf_branco(tmp_path / 'doc.pdf')
+    destino = main.assinar_arquivo(str(src))
+    doc = fitz.open(destino)
+    imagens = doc[0].get_images()
+    doc.close()
+    assert imagens == []
+
+
 def test_politica_sobrescrever(tmp_path, monkeypatch):
     """Saída existente é sobrescrita em silêncio (decisão do dono, 03/07)."""
     monkeypatch.setattr(main, 'SAIDA', tmp_path / 'saida')

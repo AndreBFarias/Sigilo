@@ -43,7 +43,7 @@ def assinar_arquivo(caminho: 'str | Path', pagina: 'int | None' = None,
     None mantém o fluxo da âncora automática.
     """
     cfg = carregar()
-    logo = cfg['logo'] or str(RAIZ / 'assets' / 'logo_placeholder.png')
+    logo = cfg['logo']
     entrada = Path(caminho).expanduser().resolve()
     if entrada.suffix.lower() in IMAGENS:
         if not entrada.exists():
