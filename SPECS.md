@@ -41,6 +41,8 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint UX-03: preview contínuo em rolagem vertical | PRONTA (03/07) — todas as páginas empilhadas, cache por página, clique por página preservado |
 | Sprint UX-05: fonte do selo embutida (Liberation Sans, OFL 1.1) | PRONTA (03/07) — render determinístico, texto vivo, subset + objstms, PDF < 60 KB |
 | Sprint UX-04: modernização da UI (cartório moderno) | PRONTA (03/07) — Fraunces no wordmark, Archivo na UI, eyebrows com fio roxo, lacre único, captions AA |
+| Sprint UX-A11Y-LACRE: contraste do rótulo do Assinar | PRONTA (03/07) — texto em breu, 4,53:1 em repouso e hover; fundo #FF5555 inviolável |
+| Sprint PUB-01: higiene pré-publicação | PRONTA (03/07) — hero do README regenerado (UI moderna, zero PII, CTA inteiro); fi órfão do CI refutado empiricamente |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 
