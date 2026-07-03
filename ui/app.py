@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 CACHE_UPLOADS = Path.home() / '.cache' / 'sigilo' / 'uploads'
 
+# Identidade visual — ponto único de troca pela arte final (um por asset).
+ASSETS = RAIZ / 'assets'
+ICONE = ASSETS / 'icon.png'
+LOGO_MARCA = ASSETS / 'logo_placeholder.png'
+
 
 @st.cache_resource
 def _inicializar_logging() -> None:
@@ -77,7 +82,10 @@ def _montar_sidebar(cfg: dict) -> dict:
     """Chapa do selo: campos persistentes. Devolve o config editado
     (gravado em disco somente ao assinar)."""
     with st.sidebar:
-        st.header('Chapa do selo')
+        # Logo da marca no cabeçalho da sidebar (st.logo renderiza como
+        # stLogo, não stImage — escapa do fundo de papel do preview do selo).
+        st.logo(str(LOGO_MARCA), size='large')
+        st.subheader('Chapa do selo')
         campos = cfg['campos']
         titulo = st.text_input('Título', value=campos['titulo'])
         nome = st.text_input('Nome', value=campos['nome'])
@@ -231,7 +239,8 @@ def _assinar(caminho: Path, doc: fitz.Document, cfg: dict) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title='Sigilo', layout='wide')
+    st.set_page_config(page_title='Sigilo', page_icon=str(ICONE),
+                       layout='wide')
     _inicializar_logging()
     aplicar_tema()
 
