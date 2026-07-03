@@ -44,6 +44,7 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint UX-A11Y-LACRE: contraste do rótulo do Assinar | PRONTA (03/07) — texto em breu, 4,53:1 em repouso e hover; fundo #FF5555 inviolável |
 | Sprint PUB-01: higiene pré-publicação | PRONTA (03/07) — hero do README regenerado (UI moderna, zero PII, CTA inteiro); fi órfão do CI refutado empiricamente |
 | Sprint UX-06: polish de identidade | PRONTA (03/07) — wordmark "Sigilo" serif bicolor, H1 espelhado, sem "Chapa do selo", rótulos 14px, disabled visível |
+| Sprint HOTFIX-01: subset_fonts corrompia documentos reais | PRONTA (03/07) — subset em memória só dos glifos do selo (fontTools); página sem selo byte-idêntica; regressão com fixture LibreOffice |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 

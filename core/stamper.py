@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 
 import fitz  # PyMuPDF
+from fontTools.subset import Options, Subsetter
+from fontTools.ttLib import TTFont
 from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
@@ -15,8 +17,9 @@ RAIZ = Path(__file__).resolve().parent.parent
 # Fonte embutida no selo: Liberation Sans (métrica Arial ≈ Helvetica), sob
 # SIL Open Font License 1.1 (ver assets/fonts/OFL.txt). Empacotada no repo
 # porque o app é distribuível e não pode depender de fonte do sistema.
-# Embutir a TTF via insert_text(fontfile=) fixa o render em qualquer
-# visualizador; o texto continua vivo/pesquisável e vetorial (base-14 era
+# A TTF é pré-subsetada em memória (fontTools) só para os glifos do selo e
+# embutida via insert_font(fontbuffer=); o render fica fixo em qualquer
+# visualizador e o texto continua vivo/pesquisável e vetorial (base-14 era
 # substituída de forma imprevisível pelo visualizador).
 FONTE_REGULAR = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Regular.ttf'
 FONTE_BOLD = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Bold.ttf'
@@ -103,6 +106,28 @@ def _fonte_medida(fontfile: Path) -> fitz.Font:
     return _FONTE_MEDIDA[chave]
 
 
+def _subset_bytes(fontfile: Path, texto: str) -> bytes:
+    """Subseta a TTF em memória só para os glifos de `texto` e retorna os bytes
+    da fonte reduzida. Retém o cmap dos caracteres pedidos (default do
+    Subsetter), para o texto do selo continuar vivo/pesquisável e sem tofu.
+
+    Substitui doc.subset_fonts(): aqui subsetamos APENAS a fonte do selo, sem
+    re-tocar as fontes estrangeiras (Type0/TrueType) do documento original — que
+    subset_fonts corrompia. O subset transiente (dezenas de glifos, ~80 ms)
+    fica pequeno o bastante para dispensar o subset global no save.
+    """
+    fonte = TTFont(str(fontfile))
+    opcoes = Options()
+    opcoes.notdef_outline = True            # mantém .notdef com contorno válido
+    opcoes.drop_tables += ['FFTM']          # tabela FontForge não-subsetável (só ruído)
+    subsetter = Subsetter(options=opcoes)
+    subsetter.populate(text=texto)
+    subsetter.subset(fonte)
+    buffer = io.BytesIO()
+    fonte.save(buffer)
+    return buffer.getvalue()
+
+
 def _ajustar_fonte(texto: str, fonte: fitz.Font, fs: float,
                    max_w: float) -> float:
     largura = fonte.text_length(texto, fontsize=fs)
@@ -184,6 +209,19 @@ def carimbar_pdf(pdf_in: Path, pdf_out: Path, campos: dict,
         'data': f'Data: {timestamp_agora()}',
         'verifique': f'Verifique em {verifique}' if verifique else '',
     }
+    # Agrupa os caracteres realmente renderizados por peso (linhas vazias não
+    # entram) e embute, por peso usado, um subset em memória da fonte do selo
+    # com só esses glifos. Um peso sem texto (ex.: nome='' deixa o bold sem uso)
+    # não é subsetado nem embutido.
+    chars_por_peso: 'dict[str, set]' = {}
+    for campo, peso, _fs, _baseline in LAYOUT:
+        texto = valores[campo]
+        if texto:
+            chars_por_peso.setdefault(peso, set()).update(texto)
+    for peso, chars in chars_por_peso.items():
+        nome_interno, fontfile = FONTES[peso]
+        page.insert_font(fontname=nome_interno,
+                         fontbuffer=_subset_bytes(fontfile, ''.join(chars)))
     for campo, peso, fs, baseline in LAYOUT:
         texto = valores[campo]
         if not texto:
@@ -191,16 +229,16 @@ def carimbar_pdf(pdf_in: Path, pdf_out: Path, campos: dict,
         nome_interno, fontfile = FONTES[peso]
         fs = _ajustar_fonte(texto, _fonte_medida(fontfile), fs * ef, max_w)
         page.insert_text(fitz.Point(x_texto, box.y0 + baseline * ey),
-                         texto, fontsize=fs,
-                         fontname=nome_interno, fontfile=str(fontfile))
+                         texto, fontsize=fs, fontname=nome_interno)
 
     pdf_out.parent.mkdir(parents=True, exist_ok=True)
-    # subset_fonts corta o glyf do TTF embutido ao subconjunto de glifos
-    # realmente usado; use_objstms comprime os dicionários CIDFont em object
-    # streams (PDF 1.5). Sem os dois, a fonte embutida inflaria o PDF muito
-    # além dos ~25 KB. deflate/deflate_images seguem cuidando do logo (RGB cru
-    # inflava ~1 MB); deflate_fonts comprime o stream da fonte.
-    doc.subset_fonts()
+    # NÃO chamar doc.subset_fonts() aqui: ele re-subseteava TODAS as fontes do
+    # documento — inclusive os subsets estrangeiros do LibreOffice/Cairo (Type0
+    # CairoFont, DejaVuSans) das páginas do documento original — e os corrompia
+    # (regressão da Sprint UX-05: glifos colapsados em borrões nas páginas sem
+    # selo). A fonte do selo já entra pré-subsetada em memória (fontTools, acima),
+    # então garbage=4/use_objstms=1/deflate seguem cuidando do tamanho sem tocar
+    # as fontes do documento; deflate_fonts comprime o stream do subset do selo.
     doc.save(pdf_out, deflate=True, deflate_images=True, deflate_fonts=True,
              garbage=4, use_objstms=1)
     doc.close()

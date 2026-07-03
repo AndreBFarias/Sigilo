@@ -18,6 +18,11 @@ CAMPOS = {'titulo': 'Documento assinado eletronicamente',
           'nome': 'FULANO DE TAL',
           'verifique_em': 'https://validar.sigilo.app'}
 
+# Fixture commitado (LibreOffice headless): 2 páginas com fonte estrangeira
+# embutida (subset) na página 0 e âncora "Brasília/DF" no rodapé da página 1.
+# Gerado por scripts/gerar_fixture_type0.py; não depende de soffice em CI.
+FIXTURE_TYPE0 = Path(__file__).resolve().parent / 'fixtures' / 'type0_2paginas.pdf'
+
 CONTENT_TYPES = (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -242,6 +247,42 @@ def test_cli_logo_vazia_sem_logo(tmp_path, monkeypatch):
     imagens = doc[0].get_images()
     doc.close()
     assert imagens == []
+
+
+def test_fontes_estrangeiras_intactas_apos_selagem(tmp_path):
+    """HOTFIX-01: assinar um PDF com fonte estrangeira embutida (subset do
+    LibreOffice/Cairo) NÃO pode alterar as páginas que não recebem o selo.
+
+    Fecha o buraco de cobertura da UX-05: os testes usavam PDFs sintéticos do
+    fitz (só base-14/Liberation), sem fontes estrangeiras, então não pegaram
+    que doc.subset_fonts() re-subseteava e corrompia os subsets do documento
+    original. TEETH: com subset_fonts (código pré-fix) a página 0 corrompe
+    (samples divergem); sem ele, a página 0 fica byte-idêntica."""
+    campos = dict(CAMPOS, nome='JOÃO DA CONCEIÇÃO')  # nome acentuado: cobre tofu
+    mat = fitz.Matrix(2, 2)
+    sha_fixture = hashlib.sha256(FIXTURE_TYPE0.read_bytes()).hexdigest()
+    doc_in = fitz.open(FIXTURE_TYPE0)
+    # a página 0 traz a fonte estrangeira embutida (subset com prefixo 'XXXXXX+')
+    embutidas = [f[3] for f in doc_in[0].get_fonts() if '+' in f[3]]
+    antes = doc_in[0].get_pixmap(matrix=mat).samples
+    doc_in.close()
+    assert embutidas, 'fixture inválido: página 0 sem fonte estrangeira embutida'
+
+    out = carimbar_pdf(FIXTURE_TYPE0, tmp_path / 'out.pdf', campos)
+
+    doc_out = fitz.open(out)
+    depois = doc_out[0].get_pixmap(matrix=mat).samples
+    texto_selo = doc_out[1].get_text()
+    doc_out.close()
+    # 1) página sem selo byte-idêntica (teeth do subset_fonts)
+    assert depois == antes
+    # 2) selo vivo/pesquisável na página da âncora
+    assert 'Documento assinado eletronicamente' in texto_selo
+    # 3) nome acentuado íntegro, sem tofu
+    assert 'JOÃO DA CONCEIÇÃO' in texto_selo
+    assert '?' not in texto_selo
+    # o fixture commitado (entrada) nunca é alterado pela selagem
+    assert hashlib.sha256(FIXTURE_TYPE0.read_bytes()).hexdigest() == sha_fixture
 
 
 def test_politica_sobrescrever(tmp_path, monkeypatch):
