@@ -6,6 +6,7 @@ Sidebar: a chapa do selo (campos que persistem em ~/.config/sigilo).
 Área principal: o documento da vez (upload, preview, assinatura, resultado).
 """
 import hashlib
+import io
 import logging
 import subprocess
 import sys
@@ -82,9 +83,26 @@ def _montar_sidebar(cfg: dict) -> dict:
         nome = st.text_input('Nome', value=campos['nome'])
         verifique = st.text_input('Verifique em', value=campos['verifique_em'],
                                   placeholder='vazio = linha oculta')
-        logo = st.text_input('Logo (caminho da imagem)', value=cfg['logo'])
-        if logo and not Path(logo).exists():
-            st.caption('Arquivo de logo não encontrado — o selo sai sem logo.')
+        logo = cfg['logo']
+        enviado_logo = st.file_uploader('Logo do selo',
+                                        type=['png', 'jpg', 'jpeg'])
+        if enviado_logo is not None:
+            try:
+                Image.open(io.BytesIO(enviado_logo.getvalue())).verify()
+            except Exception:
+                logger.warning('Logo enviada inválida: %s', enviado_logo.name)
+                st.warning('Imagem inválida — envie um PNG ou JPG válido.')
+            else:
+                logo = config.salvar_logo(
+                    enviado_logo.getvalue(),
+                    Path(enviado_logo.name).suffix.lower())
+        if logo and Path(logo).exists():
+            st.image(logo, width=120)
+            if st.button('Remover logo'):
+                config.remover_logo()
+                logo = ''
+        else:
+            st.caption('Sem logo — o selo sai sem imagem.')
         coluna_l, coluna_a = st.columns(2)
         # Mínimo 20 pt (não 50): a altura padrão do selo oficial é 45 pt.
         largura = coluna_l.number_input('Largura (pt)', min_value=20.0,

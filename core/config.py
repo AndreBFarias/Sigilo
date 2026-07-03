@@ -43,3 +43,27 @@ def salvar(config: dict) -> None:
         json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8'
     )
     logger.debug('Configuração salva em %s', CONFIG_PATH)
+
+
+def salvar_logo(dados: bytes, sufixo: str) -> str:
+    """Persiste uma cópia da logo enviada em CONFIG_DIR e devolve o caminho.
+
+    Remove variantes 'logo.*' de extensão diferente para não deixar cópia
+    obsoleta — só existe uma logo por vez. O carimbo lê esse caminho de disco
+    (contrato de core.stamper.carimbar_pdf, que degrada se o arquivo sumir).
+    """
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    destino = CONFIG_DIR / ('logo' + sufixo.lower())
+    for antiga in CONFIG_DIR.glob('logo.*'):
+        if antiga != destino:
+            antiga.unlink()
+    destino.write_bytes(dados)
+    logger.debug('Logo persistida em %s (%d bytes)', destino, len(dados))
+    return str(destino)
+
+
+def remover_logo() -> None:
+    """Apaga as variantes 'logo.*' persistidas — o selo passa a sair sem logo."""
+    for antiga in CONFIG_DIR.glob('logo.*'):
+        antiga.unlink()
+    logger.debug('Logo removida de %s', CONFIG_DIR)
