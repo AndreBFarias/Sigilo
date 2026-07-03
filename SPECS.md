@@ -38,6 +38,7 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint 6: LibreOffice headless | RESOLVIDA (03/07) — ver seção |
 | Sprint UX-01/01b: upload de logo + "Remover logo" remove de verdade | PRONTA (03/07) — logo vazia = sem logo (main.py:46 sem `or placeholder`) |
 | Sprint UX-02: logo da marca na sidebar + favicon | PRONTA (03/07) — st.logo + page_icon, constantes ICONE/LOGO_MARCA |
+| Sprint UX-03: preview contínuo em rolagem vertical | PRONTA (03/07) — todas as páginas empilhadas, cache por página, clique por página preservado |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 

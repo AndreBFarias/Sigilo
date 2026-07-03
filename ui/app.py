@@ -160,10 +160,10 @@ def _montar_sidebar(cfg: dict) -> dict:
     return editado
 
 
-def _resetar_documento(resumo: str, pagina_inicial: int) -> None:
-    """Documento novo: zera página, ponto clicado e resultado anterior."""
+def _resetar_documento(resumo: str) -> None:
+    """Documento novo: zera ponto clicado e resultado anterior. Não há mais
+    página corrente — o preview mostra todas as páginas em rolagem contínua."""
     st.session_state['doc_hash'] = resumo
-    st.session_state['pagina_atual'] = pagina_inicial
     st.session_state['ponto_livre'] = None
     st.session_state['resultado'] = None
 
@@ -176,58 +176,75 @@ def _caixa_do_ponto(ponto: 'tuple[float, float, int]', cfg: dict,
     return preview.clampar_box(caixa, page_rect)
 
 
+@st.cache_data(show_spinner=False)
+def _pagina_png(_doc: fitz.Document, doc_hash: str, indice: int,
+                dpi: int) -> bytes:
+    """Render cacheado por página: reruns não re-renderizam páginas já vistas.
+
+    O `_doc` (prefixo `_`) fica FORA da chave de cache; `doc_hash`, `indice` e
+    `dpi` a compõem. O fantasma NUNCA entra aqui: ele depende do ponto/box do
+    rerun e é desenhado por cima do PNG cacheado, só na página ativa.
+    """
+    imagem = preview.renderizar_pagina(_doc[indice], dpi)
+    buffer = io.BytesIO()
+    imagem.save(buffer, format='PNG')
+    return buffer.getvalue()
+
+
 def _montar_preview(doc: fitz.Document, cfg: dict, resumo: str) -> None:
-    """Preview sempre visível: fantasma na posição efetiva, navegação e
-    clique para reposicionar no modo livre."""
+    """Preview contínuo: todas as páginas empilhadas em rolagem vertical
+    (estilo assinador gov.br). O fantasma aparece na página com ponto/âncora;
+    no modo livre, clicar em qualquer página reposiciona o centro do carimbo."""
     total = len(doc)
-    pagina_atual = min(st.session_state['pagina_atual'], total - 1)
-    page = doc[pagina_atual]
     livre = cfg['posicao'] == 'livre'
 
     indice_padrao, caixa_padrao = preview.box_padrao(
         doc, float(cfg['largura']), float(cfg['altura']))
     ponto = st.session_state.get('ponto_livre')
 
-    caixa_fantasma = None
-    if livre and ponto is not None and ponto[2] == pagina_atual:
-        caixa_fantasma = _caixa_do_ponto(ponto, cfg, page.rect)
-    elif not livre and pagina_atual == indice_padrao:
-        caixa_fantasma = caixa_padrao
-
-    imagem = preview.renderizar_pagina(page)
-    if caixa_fantasma is not None:
-        imagem = preview.desenhar_fantasma(imagem, caixa_fantasma, page.rect)
-
     if livre:
-        st.caption('Clique na página para posicionar o centro do carimbo.')
-        # use_column_width: a imagem preenche a coluna e o clique devolve o
-        # tamanho exibido — a conversão para pontos PDF vale em qualquer tela.
-        clique = streamlit_image_coordinates(
-            imagem, use_column_width='always',
-            key=f'clique_{resumo}_{pagina_atual}', cursor='crosshair')
-        if clique is not None:
-            x_pdf, y_pdf = preview.clique_para_ponto_pdf(
-                clique['x'], clique['y'], clique['width'], clique['height'],
-                page.rect)
-            novo = (x_pdf, y_pdf, pagina_atual)
-            if st.session_state.get('ponto_livre') != novo:
-                st.session_state['ponto_livre'] = novo
-                st.rerun()
-    else:
-        st.image(imagem, width='stretch')
+        st.caption('Clique em qualquer página para posicionar o centro do '
+                   'carimbo.')
 
-    coluna_ant, coluna_rotulo, coluna_prox = st.columns([1, 2, 1])
-    if coluna_ant.button('Anterior', disabled=pagina_atual == 0,
-                         width='stretch'):
-        st.session_state['pagina_atual'] = pagina_atual - 1
-        st.rerun()
-    coluna_rotulo.markdown(
-        f"<p style='text-align:center'>{pagina_atual + 1} / {total}</p>",
-        unsafe_allow_html=True)
-    if coluna_prox.button('Próxima', disabled=pagina_atual >= total - 1,
-                          width='stretch'):
-        st.session_state['pagina_atual'] = pagina_atual + 1
-        st.rerun()
+    for indice in range(total):
+        page_rect = doc[indice].rect
+        # Imagem base do cache (sem fantasma); fantasma desenhado por cima.
+        imagem = Image.open(io.BytesIO(
+            _pagina_png(doc, resumo, indice, preview.DPI_PREVIEW)))
+
+        caixa_fantasma = None
+        if livre and ponto is not None and ponto[2] == indice:
+            caixa_fantasma = _caixa_do_ponto(ponto, cfg, page_rect)
+        elif not livre and indice == indice_padrao:
+            caixa_fantasma = caixa_padrao
+        if caixa_fantasma is not None:
+            imagem = preview.desenhar_fantasma(imagem, caixa_fantasma,
+                                               page_rect)
+
+        st.caption(f'Página {indice + 1} de {total}')
+        if livre:
+            # use_column_width: a imagem preenche a coluna e o clique devolve o
+            # tamanho exibido — a conversão para pontos PDF vale em qualquer
+            # tela. Chave por página: cada componente coexiste na rolagem.
+            clique = streamlit_image_coordinates(
+                imagem, use_column_width='always',
+                key=f'clique_{resumo}_{indice}', cursor='crosshair')
+            if clique is not None:
+                # Guard idempotente POR PÁGINA: cada componente RETÉM seu último
+                # clique e o reporta a cada rerun. Comparar contra ponto_livre
+                # faria duas páginas clicadas guerrearem por reruns; por isso
+                # comparamos o clique bruto contra o último processado desta
+                # chave — só um clique realmente novo reposiciona.
+                chave_clique = f'ultimo_clique_{resumo}_{indice}'
+                if st.session_state.get(chave_clique) != clique:
+                    st.session_state[chave_clique] = clique
+                    x_pdf, y_pdf = preview.clique_para_ponto_pdf(
+                        clique['x'], clique['y'], clique['width'],
+                        clique['height'], page_rect)
+                    st.session_state['ponto_livre'] = (x_pdf, y_pdf, indice)
+                    st.rerun()
+        else:
+            st.image(imagem, width='stretch')
 
 
 def _assinar(caminho: Path, doc: fitz.Document, cfg: dict) -> None:
@@ -285,10 +302,7 @@ def main() -> None:
         else:
             doc = _abrir_documento(str(alvo), alvo.stat().st_mtime)
             if st.session_state.get('doc_hash') != resumo:
-                indice_inicial, _ = preview.box_padrao(
-                    doc, float(cfg_editado['largura']),
-                    float(cfg_editado['altura']))
-                _resetar_documento(resumo, indice_inicial)
+                _resetar_documento(resumo)
             _montar_preview(doc, cfg_editado, resumo)
 
     if st.button('Assinar agora', type='primary', disabled=doc is None,
