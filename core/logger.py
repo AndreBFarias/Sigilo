@@ -22,6 +22,11 @@ def setup_logging() -> None:
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
+    # Terceiros barulhentos ficam em WARNING: o fontTools despeja ~94 linhas
+    # INFO por selagem e o watchdog inunda o DEBUG — o sinal do app sumia.
+    for ruidoso in ('fontTools', 'watchdog', 'PIL', 'urllib3'):
+        logging.getLogger(ruidoso).setLevel(logging.WARNING)
+
     def handle_exception(exc_type, exc_value, exc_traceback):
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)

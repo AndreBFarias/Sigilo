@@ -10,6 +10,7 @@ env/
 # IDE / Editor
 .idea/
 *.log
+*.log.[0-9]*
 __pycache__/
 *.py[cod]
 *.swo

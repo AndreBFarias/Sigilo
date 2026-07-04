@@ -20,7 +20,7 @@
   `assets/fonts/`, SIL OFL 1.1 — de fonts-liberation2 2.1.5, compatível com
   GPL-3): render tipográfico determinístico em qualquer visualizador, texto
   segue vivo/pesquisável (subset embutido; PDF permanece < 60 KB)
-- Suíte de testes completa (22 testes: carimbo, proporção, campos vazios,
+- Suíte de testes completa (31 testes: carimbo, proporção, campos vazios,
   imagens, letterbox, compressão, política de sobrescrita, preview e clique)
 - Infraestrutura: install/uninstall, run.sh, launcher do navegador
   (porta 8511), CI, logging rotativo

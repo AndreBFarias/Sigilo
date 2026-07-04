@@ -27,4 +27,4 @@ Documentos processados pelo Sigilo são relatórios e arquivos pessoais.
 
 ## Fora do Escopo
 
-- `PyMuPDF`, `Pillow`, `PyGObject`, LibreOffice (upstream)
+- `PyMuPDF`, `Pillow`, LibreOffice (upstream)
