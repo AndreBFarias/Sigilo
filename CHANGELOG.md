@@ -16,12 +16,13 @@
   preservados) e selo clampado em fotos pequenas
 - Logo placeholder (wordmark) e ícone arcano do aplicativo, paleta Dracula
 - Linha "Verifique em" padrão apontando para https://validar.sigilo.app
-- Fonte do selo embutida no PDF via TTF (Liberation Sans Regular/Bold,
-  `assets/fonts/`, SIL OFL 1.1 — de fonts-liberation2 2.1.5, compatível com
-  GPL-3): render tipográfico determinístico em qualquer visualizador, texto
-  segue vivo/pesquisável (subset embutido; PDF permanece < 60 KB)
-- Suíte de testes completa (31 testes: carimbo, proporção, campos vazios,
-  imagens, letterbox, compressão, política de sobrescrita, preview e clique)
+- Fonte do selo embutida no PDF via TTF (Source Sans 3 Regular/Medium/Bold,
+  `assets/fonts/`, SIL OFL 1.1 — release oficial Adobe source-sans 3.052R,
+  compatível com GPL-3): render tipográfico determinístico em qualquer
+  visualizador, texto segue vivo/pesquisável (subset embutido; PDF < 60 KB)
+- Suíte de testes completa (32 testes: carimbo, proporção, campos vazios,
+  imagens, letterbox, compressão, política de sobrescrita, preview, clique
+  e peso da fonte por linha do selo)
 - Infraestrutura: install/uninstall, run.sh, launcher do navegador
   (porta 8511), CI, logging rotativo
 
@@ -30,6 +31,14 @@
 - Interface migrada de GTK4 para Streamlit (2026-07-03) — visão SaaS;
   CLI `./run.sh arquivo` inalterada
 - Saída assinada existente é sobrescrita em silêncio (decisão de projeto)
+- Fonte do selo trocada de Liberation Sans (neo-grotesca) para Source Sans 3
+  (humanista) para casar melhor o selo oficial gov.br (Sprint UX-07, round 2):
+  escolha por bancada de sobreposição de pixels (IoU por linha vs o bitmap do
+  gov, `scripts/bancada_fonte_selo.py`) — Source Sans 3 teve o maior escore
+  agregado entre as fontes livres (0.558 vs 0.453 da Liberation). Pesos por
+  linha eleitos pelo escore e pela densidade de traço do gov: título Regular,
+  nome Bold, data e "Verifique em" Medium (o gov usa peso médio fora do nome).
+  Mesma rota segura do HOTFIX-01 (subset em memória + `insert_font`)
 
 ### Corrigido
 - LibreOffice headless: falha "source file could not be loaded" causada por

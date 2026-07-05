@@ -100,9 +100,10 @@ def test_carimbo_em_pdf(tmp_path):
 
 
 def test_fonte_embutida_e_texto_vivo(tmp_path):
-    """UX-05: a fonte TTF fica embutida (subset), não mais a base-14
+    """UX-05/UX-07: a fonte TTF fica embutida (subset), não mais a base-14
     helv/hebo, e o texto continua vivo/pesquisável (guarda contra a
-    regressão para bitmap achatado)."""
+    regressão para bitmap achatado). UX-07 trocou a família para a
+    humanista Source Sans 3 (maior escore de sobreposição vs o selo gov.br)."""
     src = _pdf_branco(tmp_path / 'doc.pdf')
     out = carimbar_pdf(src, tmp_path / 'out.pdf', CAMPOS)
     doc = fitz.open(out)
@@ -110,10 +111,35 @@ def test_fonte_embutida_e_texto_vivo(tmp_path):
     basefonts = [f[3] for f in pagina.get_fonts()]
     texto = pagina.get_text()
     doc.close()
-    # subset embutido: basefont vem com prefixo (ex.: 'MUPTJJ+Liberation Sans')
-    assert any('Liberation Sans' in n for n in basefonts)
+    # subset embutido: basefont vem com prefixo (ex.: 'MUPTJJ+Source Sans 3')
+    assert any('Source Sans 3' in n for n in basefonts)
+    assert not any('Liberation' in n for n in basefonts)
     assert not any(n in ('Helvetica', 'Helvetica-Bold') for n in basefonts)
     assert 'Documento assinado eletronicamente' in texto
+
+
+def test_pesos_por_linha_embutidos(tmp_path):
+    """UX-07: cada linha usa o peso eleito pela bancada de sobreposição
+    (título Regular, nome Bold, data/verifique Medium — o gov usa peso médio
+    fora do nome). Prova via o PostScript name do span embutido em cada linha."""
+    src = _pdf_branco(tmp_path / 'doc.pdf')
+    out = carimbar_pdf(src, tmp_path / 'out.pdf', CAMPOS)
+    doc = fitz.open(out)
+    fonte_da_linha = {}
+    for bloco in doc[-1].get_text('dict')['blocks']:
+        for linha in bloco.get('lines', []):
+            for span in linha['spans']:
+                fonte_da_linha[span['text']] = span['font']
+    doc.close()
+
+    def fonte(prefixo: str) -> str:
+        return next(f for t, f in fonte_da_linha.items() if t.startswith(prefixo))
+
+    # data (timestamp) e verifique (URL) variam de conteúdo: casa por prefixo
+    assert fonte('Documento assinado') == 'SourceSans3-Regular'
+    assert fonte('FULANO DE TAL') == 'SourceSans3-Bold'
+    assert fonte('Data:') == 'SourceSans3-Medium'
+    assert fonte('Verifique em') == 'SourceSans3-Medium'
 
 
 def test_nome_acentuado_sem_tofu(tmp_path):

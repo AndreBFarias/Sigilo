@@ -14,24 +14,34 @@ logger = logging.getLogger(__name__)
 
 # Raiz do repositório (core/ -> raiz) para localizar a fonte empacotada.
 RAIZ = Path(__file__).resolve().parent.parent
-# Fonte embutida no selo: Liberation Sans (métrica Arial ≈ Helvetica), sob
-# SIL Open Font License 1.1 (ver assets/fonts/OFL.txt). Empacotada no repo
-# porque o app é distribuível e não pode depender de fonte do sistema.
+# Fonte embutida no selo: Source Sans 3 (humanista), sob SIL Open Font
+# License 1.1 (ver assets/fonts/OFL.txt). Escolhida na Sprint UX-07 por
+# bancada de sobreposição de pixels (IoU por linha) contra o bitmap do selo
+# gov.br: a humanista Source Sans 3 casa o selo oficial melhor que a
+# neo-grotesca Liberation Sans do round anterior. Empacotada no repo porque
+# o app é distribuível e não pode depender de fonte do sistema.
 # A TTF é pré-subsetada em memória (fontTools) só para os glifos do selo e
 # embutida via insert_font(fontbuffer=); o render fica fixo em qualquer
 # visualizador e o texto continua vivo/pesquisável e vetorial (base-14 era
 # substituída de forma imprevisível pelo visualizador).
-FONTE_REGULAR = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Regular.ttf'
-FONTE_BOLD = RAIZ / 'assets' / 'fonts' / 'LiberationSans-Bold.ttf'
+FONTE_REGULAR = RAIZ / 'assets' / 'fonts' / 'SourceSans3-Regular.ttf'
+FONTE_MEDIUM = RAIZ / 'assets' / 'fonts' / 'SourceSans3-Medium.ttf'
+FONTE_BOLD = RAIZ / 'assets' / 'fonts' / 'SourceSans3-Bold.ttf'
 # Nome interno do recurso de fonte no PDF de saída (um por peso).
 FONTE_REGULAR_NOME = 'sigilo-sans'
+FONTE_MEDIUM_NOME = 'sigilo-sans-medium'
 FONTE_BOLD_NOME = 'sigilo-sans-bold'
 
 # Layout clonado do selo gov.br por engenharia reversa (2026-07-02):
 # o selo oficial é um bitmap 440x120px escalado para 165x45pt; as medidas
-# abaixo foram extraídas pixel a pixel e os tamanhos de fonte calculados
-# pela largura das linhas (métrica Helvetica ≈ Liberation Sans, por isso as
-# baselines e posições absolutas sobrevivem à troca da fonte).
+# abaixo foram extraídas pixel a pixel. As baselines e posições absolutas são
+# geometria pura (independem da fonte); os tamanhos de ponto vieram da largura
+# das linhas na métrica original. A Source Sans 3 é ~4-16% mais estreita que a
+# Liberation (UX-07): as linhas ficam abaixo de max_w sem estouro e o encaixe
+# vertical (baselines) se mantém — por isso os tamanhos originais são preservados.
+# Peso por linha eleito pela bancada UX-07 (IoU + densidade de traço vs o gov):
+# título Regular, nome Bold, data/verifique Medium (o gov usa peso médio fora
+# do nome; a Liberation Regular do round anterior saía fina demais).
 REF_LARGURA, REF_ALTURA = 165.0, 45.0
 LOGO_BOX = (0.0, 11.2, 40.9, 29.6)  # bbox do logo no referencial 165x45
 X_TEXTO = 45.0                       # início do bloco de texto
@@ -39,12 +49,13 @@ X_TEXTO = 45.0                       # início do bloco de texto
 LAYOUT = (
     ('titulo', 'regular', 5.70, 7.10),
     ('nome', 'bold', 4.81, 18.38),
-    ('data', 'regular', 5.42, 27.00),
-    ('verifique', 'regular', 5.85, 33.30),
+    ('data', 'medium', 5.42, 27.00),
+    ('verifique', 'medium', 5.85, 33.30),
 )
 # peso -> (nome interno embutido, arquivo TTF empacotado)
 FONTES = {
     'regular': (FONTE_REGULAR_NOME, FONTE_REGULAR),
+    'medium': (FONTE_MEDIUM_NOME, FONTE_MEDIUM),
     'bold': (FONTE_BOLD_NOME, FONTE_BOLD),
 }
 # Cache de fitz.Font para medir a largura com a MESMA métrica do render:

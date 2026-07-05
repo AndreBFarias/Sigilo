@@ -45,6 +45,7 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 | Sprint PUB-01: higiene pré-publicação | PRONTA (03/07) — hero do README regenerado (UI moderna, zero PII, CTA inteiro); fi órfão do CI refutado empiricamente |
 | Sprint UX-06: polish de identidade | PRONTA (03/07) — wordmark "Sigilo" serif bicolor, H1 espelhado, sem "Chapa do selo", rótulos 14px, disabled visível |
 | Sprint HOTFIX-01: subset_fonts corrompia documentos reais | PRONTA (03/07) — subset em memória só dos glifos do selo (fontTools); página sem selo byte-idêntica; regressão com fixture LibreOffice |
+| Sprint UX-07: fidelidade tipográfica do selo (round 2) | PRONTA (04/07) — fonte trocada para Source Sans 3 (humanista) por bancada de IoU vs o bitmap gov.br; título Regular, nome Bold, data/verifique Medium; S1 0.558 > S0 0.453; rota segura do HOTFIX-01 preservada; PDF < 60 KB |
 
 ### Medidas extraídas do selo oficial (referencial 165x45 pt)
 
@@ -52,18 +53,25 @@ Pasta: `~/Desenvolvimento/sigilo` (renomeada e reinstalada em 02/07/2026;
 |----------|-------|
 | Logo | bbox (0, 11.2) a (40.9, 29.6) |
 | Início do texto | x = 45.0 |
-| Título | helv 5.70 pt, baseline 7.10 |
-| Nome | helv-bold 4.81 pt, baseline 18.38 |
-| Data | helv 5.42 pt, baseline 27.00 |
-| Verifique em | helv 5.85 pt, baseline 33.30 |
+| Título | Source Sans 3 Regular 5.70 pt, baseline 7.10 |
+| Nome | Source Sans 3 Bold 4.81 pt, baseline 18.38 |
+| Data | Source Sans 3 Medium 5.42 pt, baseline 27.00 |
+| Verifique em | Source Sans 3 Medium 5.85 pt, baseline 33.30 |
 | Formato da data | `dd/mm/aaaa hh:mm:ss-0300` (sem espaço no fuso) |
 | Âncora | base do selo 17.3 pt acima da linha "Brasília/DF," |
 
 O selo oficial é um bitmap 440x120 px — o nosso é texto vetorial (fica MAIS
-nítido que o original em zoom). A fonte é a Liberation Sans (métrica
-Arial ≈ Helvetica) embutida em subset via `insert_text(fontfile=)`
-(`assets/fonts/`, SIL OFL 1.1, compatível com GPL-3), fixando o render em
-qualquer visualizador sem depender de fonte do sistema.
+nítido que o original em zoom). A fonte é a Source Sans 3 (humanista, release
+oficial Adobe source-sans 3.052R) embutida em subset em memória via
+`_subset_bytes` + `insert_font(fontbuffer=)` (`assets/fonts/`, SIL OFL 1.1,
+compatível com GPL-3), fixando o render em qualquer visualizador sem depender
+de fonte do sistema. Escolhida na Sprint UX-07 (round 2) por bancada de
+sobreposição de pixels (IoU por linha) contra o bitmap do selo gov.br: a
+Source Sans 3 humanista casa o selo oficial melhor que a Liberation Sans
+neo-grotesca do round 1. As baselines/tamanhos são geometria pura da
+engenharia reversa e independem da fonte; os pesos por linha (Regular no
+título, Bold no nome, Medium na data e no "Verifique em") reproduzem o peso
+médio que o gov usa fora do nome.
 
 ---
 
